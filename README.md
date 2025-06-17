@@ -1,4 +1,4 @@
-# AUTOMATION CESS Interstellar + BITGET WALLET + DISCORD với Selenium Python
+# AUTOMATION CESS Interstellar + BITGET WALLET với Selenium Python
 
 ## ⚠ Lưu ý quan trọng
 
