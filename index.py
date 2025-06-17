@@ -6,7 +6,6 @@ from selenium.webdriver.common.by import By
 
 from browser_automation import BrowserManager, Node
 from utils import Utility
-from googl import Setup as GoogleSetup, Auto as GoogleAuto
 from w_bitget import Setup as BitgetSetup, Auto as BitgetAuto
 
 PROJECT_URL = "https://cess.network/interstellarairdrop/?code=3043048"
@@ -15,7 +14,6 @@ class Setup:
     def __init__(self, node: Node, profile) -> None:
         self.node = node
         self.profile = profile
-        self.google_setup = GoogleSetup(node, profile)
         self.bitget_setup = BitgetSetup(node, profile)
         
     def _run(self):
@@ -31,7 +29,6 @@ class Auto:
         self.profile_name = profile.get('profile_name')
         self.password = profile.get('password')
         self.email = profile.get('seeds')
-        self.google_auto = GoogleAuto(node, profile)
         self.bitget_auto = BitgetAuto(node, profile)
 
     def click_alert(self):
