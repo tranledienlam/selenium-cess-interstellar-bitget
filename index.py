@@ -203,7 +203,7 @@ class Auto:
                     tasks_completed.append('retweet')
             elif task_button.text.lower() == 'upload':
                 times = self.task_upload(task_button)
-                tasks_completed.append(f'retweet - {times}')
+                tasks_completed.append(f'upload - {times}')
         
         self.node.snapshot(f'Hoàn thành: {tasks_completed}')
 
