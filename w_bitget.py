@@ -13,8 +13,10 @@ class Auto:
         self.driver = node._driver
         self.node = node
         self.profile_name = profile.get('profile_name')
-        self.password = profile.get('password')
-        self.seeds = profile.get('seeds')
+        self.pwd_wallet : str|None = profile.get('pwd_wallet')
+        self.seeds : str|None = profile.get('seeds')
+        self.address : str|None = None
+
     def confirm(self, text: str = 'Cancel'):
         done = False
         current_window = self.driver.current_window_handle
@@ -24,7 +26,8 @@ class Auto:
         footerBox = self.node.find(By.CSS_SELECTOR, '[class="footer"], [class="footerBox"]')
         if not footerBox:
             self.node.log('Không tìm thấy footer chứa button')
-        
+            return done
+
         buttons = self.node.find_all(By.TAG_NAME, 'button', footerBox, wait=0, timeout=0)
         button_click = None
         for button in buttons:
@@ -34,6 +37,9 @@ class Auto:
         if button_click:
             try:
                 button_click.click()
+                if self.node.find(By.XPATH, '//div[contains(text(),"Balance insufficient")]', wait=0, timeout=5):
+                    self.node.log('Balance insufficient')
+                    return done
                 done = True
             except Exception as e:
                 self.node.log(f'Không thể click vào {text}. Gặp lỗi {e}')
@@ -44,6 +50,11 @@ class Auto:
 
     def import_wallet(self) -> bool:
         """Import ví mới từ seed phrase"""
+        
+        if not self.node.find_and_click(By.XPATH, '//button[contains(text(),"Import a wallet")]'):
+            self.node.snapshot('Không tìm thấy button Import')
+            return False
+
         if not self.seeds:
             self.node.snapshot('Không tìm thấy seed trong data.txt')
             return False
@@ -53,14 +64,10 @@ class Auto:
             self.node.snapshot('Seeds không đủ 12 từ')
             return False
         
-        if not self.node.find_and_click(By.XPATH, '//button[contains(text(),"Import a wallet")]'):
-            self.node.snapshot('Không tìm thấy button Import')
-            return False
-        
         inputs_pass = self.node.find_all(By.XPATH, '//div[input[@id="component-password"]]')
 
         for input in inputs_pass[:2]:
-            self.node.find_and_input(By.CSS_SELECTOR, '[id="component-password"]', self.password, input, delay=0, wait=0, timeout=10)
+            self.node.find_and_input(By.CSS_SELECTOR, '[id="component-password"]', self.pwd_wallet, input, delay=0, wait=0, timeout=10)
         
         self.node.find_and_click(By.XPATH, '//button[span[contains(text(),"Next")]]')
 
@@ -69,7 +76,7 @@ class Auto:
         if len(inputs_seed) != 12:
             self.node.snapshot(f'Không tìm thấy input 12 seed')
         for index, input in enumerate(inputs_seed):
-            self.node.find_and_input(By.CSS_SELECTOR, '[class="wordInput-contaniner-input"]', self.seeds[index], parent_element=input, delay=0, wait=0.1)
+            self.node.find_and_input(By.CSS_SELECTOR, '[class="wordInput-contaniner-input"]', self.seeds[index], parent_element=input, delay=0, wait=1)
         self.node.find_and_click(By.XPATH, '//button[span[contains(text(), "Confirm")]]')
         self.node.find_and_click(By.XPATH, '//button[contains(text(),"OK")]')
         
@@ -78,10 +85,23 @@ class Auto:
         else:
             return False
 
+    def get_address(self):
+        if self.node.find_and_click(By.XPATH, '//div[span[contains(text(),"Receive")]]//button'):
+            canvas = self.node.find(By.TAG_NAME, 'canvas')
+            if canvas:
+                els_span = self.node.find_all(By.CSS_SELECTOR, '[class="CopyNewBox"]')
+                for el in els_span:
+                    text = el.text.lower()
+                    if '0x' in text and '...' not in text:
+                        self.node.log(f'Address: {text}')
+                        return text
+        self.node.snapshot('Không tìm thấy address', stop=False)
+
     def is_unlocked(self) -> bool:
         self.node.go_to(f'{EXTENSION_URL}/popup.html')
-        if self.node.find(By.CSS_SELECTOR, '[class="homepage_assets"]', timeout=60):
+        if self.node.find(By.CSS_SELECTOR, '[class="homepage_assets"]', timeout=100):
             self.node.log(f'Unlock wallet thành công')
+            self.address = self.get_address()
             return True
         else:
             self.node.log(f'Unlock wallet thất bại')
@@ -90,18 +110,18 @@ class Auto:
     def unlock_wallet(self) -> bool:
         """Unlock ví với mật khẩu"""
         self.node.switch_tab(f'{EXTENSION_URL}')
-        if not self.node.find_and_input(By.CSS_SELECTOR, '[id="component-password"]', self.password, delay=0.1, timeout=20):
+        if not self.node.find_and_input(By.CSS_SELECTOR, '[id="component-password"]', self.pwd_wallet, delay=0.1, timeout=20):
             return False
         self.node.press_key('Enter')
 
         return self.is_unlocked()
 
-    def change_network(self, network_name: str, rpc_url: str, chain_id: str, symbol: str, block_explorer: str = None):
+    def change_network(self, network_name: str, rpc_url: str, chain_id: str, symbol: str, block_explorer: str | None= None):
         """Thay đổi mạng lưới"""
         # Kiểm tra và chọn network
         current_network = self.node.get_text(By.CSS_SELECTOR, '[class*="networkName"]')
         
-        if network_name in current_network:
+        if  current_network and network_name in current_network:
             self.node.log(f"Đang ở network {network_name}, không cần chuyển")
             return True
         else:
@@ -121,16 +141,17 @@ class Auto:
                 inputs_network = self.node.find_all(By.CSS_SELECTOR, '[class="inputItemBox"]')
                 if len(inputs_network) != 5:
                     self.node.snapshot(f'Không tìm thấy input add network')
-                self.node.find_and_input(By.TAG_NAME, 'textarea', rpc_url, inputs_network[0], delay=0, wait=0.1, timeout=0)
-                self.node.find_and_input(By.TAG_NAME, 'input', network_name, inputs_network[1], delay=0, wait=0.1, timeout=0)
-                self.node.find_and_input(By.TAG_NAME, 'input', chain_id, inputs_network[2], delay=0, wait=0.1, timeout=0)
-                self.node.find_and_input(By.TAG_NAME, 'input', symbol, inputs_network[3], delay=0, wait=0.1, timeout=0)
-                self.node.find_and_input(By.TAG_NAME, 'input', block_explorer, inputs_network[4], delay=0, wait=0.1, timeout=0)
+                self.node.find_and_input(By.TAG_NAME, 'textarea', rpc_url, inputs_network[0], delay=0, wait=1, timeout=0)
+                self.node.find_and_input(By.TAG_NAME, 'input', network_name, inputs_network[1], delay=0, wait=1, timeout=0)
+                self.node.find_and_input(By.TAG_NAME, 'input', chain_id, inputs_network[2], delay=0, wait=1, timeout=0)
+                self.node.find_and_input(By.TAG_NAME, 'input', symbol, inputs_network[3], delay=0, wait=1, timeout=0)
+                if block_explorer:
+                    self.node.find_and_input(By.TAG_NAME, 'input', block_explorer, inputs_network[4], delay=0, wait=1, timeout=0)
                 self.node.find_and_click(By.CSS_SELECTOR, '[class="buttonBox"]')
 
         current_network = self.node.get_text(By.CSS_SELECTOR, '[class*="networkName"]')
         
-        if network_name in current_network:
+        if current_network and network_name in current_network:
             self.node.log(f"Chuyển network {network_name} thành công")
             return True
         else:
@@ -177,7 +198,7 @@ class Setup:
         
     def _run(self):
         # Chuyển đến trang extension
-        self.node.go_to(f'{EXTENSION_URL}/popup.html')
+        self.node.go_to(f'{EXTENSION_URL}/popup.html', 'get')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -186,7 +207,7 @@ if __name__ == '__main__':
     parser.add_argument('--disable-gpu', action='store_true', help="Tắt GPU")
     args = parser.parse_args()
 
-    profiles = Utility.read_data('profile_name', 'password', 'seeds')
+    profiles = Utility.read_data('profile_name', 'pwd_wallet', 'seeds')
     
     if not profiles:
         print("Không có dữ liệu để chạy")

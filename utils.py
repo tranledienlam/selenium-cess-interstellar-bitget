@@ -97,7 +97,29 @@ class Utility:
 
         time.sleep(second)
         return True
-    
+
+    @staticmethod
+    def timeout(second: int = 5):
+        """
+        Trả về một hàm kiểm tra, cho biết liệu thời gian đã vượt quá giới hạn timeout hay chưa.
+
+        Hàm này được dùng để thay thế biểu thức lặp kiểu:
+            start_time = time.time()
+            while time.time() - start_time < seconds:
+
+        Args:
+            secons (int): Thời gian giới hạn tính bằng giây.
+
+        Returns:
+            Callable[[], bool]: Một hàm không tham số, trả về True nếu vẫn còn trong thời gian cho phép, False nếu đã hết thời gian.
+        """
+        start_time = time.time()
+        
+        def checker():
+            return time.time() - start_time < second
+        
+        return checker
+
     @staticmethod
     def logger(profile_name: str = 'System', message: str = 'Chưa có mô tả nhật ký', show_log: bool = True):
         '''

@@ -1,7 +1,7 @@
 @echo off
 cd /d %~dp0
 
-set VENV_PATH=H:\venv\Scripts\python.exe
+set VENV_PATH=E:\venv\Scripts\python.exe
 REM Kiểm tra Python trong môi trường ảo
 if exist "%VENV_PATH%" (
     set PYTHON_PATH=%VENV_PATH%

@@ -60,13 +60,14 @@ Trong trường hợp quá trình tải tự động thất bại, tool sẽ m�
 ## 🚀 Chức năng chính
 
 - **Import ví bitget và connect**: Tự động import ví (nếu cung cấp 12 seeds trong file data.txt) và kết nối ví với trang dự án.
-- **Làm task hằng ngày**: lấy point task visit, retweet, upload.
+- **Làm task hằng ngày**: lấy point task visit, retweet, upload, và get token - sign ví.
 
 ---
 
 ## 🔧 Yêu cầu ban đầu
 
 - **Bitget**: Import sẵn 12 seeds vào Bitget (nếu không cung cấp 12 seeds trong file data.txt).
+- **Google**: Đăng nhập trước google (nếu không cung cấp mật khấu)
 
 - **CESS**: Cần tự thủ công các task social (verify task X, discord, telegram, tiktok) để mở task upload. Task quiz tham khảo câu trả lời tại: [Post 1](https://x.com/when_tge/status/1901319547979813323) và [Post 2](https://x.com/RealRanairfan/status/1924015657668026610)
 
@@ -79,6 +80,7 @@ Trong trường hợp quá trình tải tự động thất bại, tool sẽ m�
 | `extensions/Bitget-Wallet-*.crx` | Tiện ích mở rộng Metamask Wallet.          |
 | `browser_automation.py`          | Code tự động hóa trình duyệt.              |
 | `utils.py`                       | Các hàm hỗ trợ chung.                      |
+| `googl.py`                     | Xử lý các thao tác liên quan đến Google.    |
 | `w_biget.py`                     | Xử lý các thao tác liên quan đến Biget.    |
 | `index.py`                       | File khởi chạy chương trình chính.         |
 | `requirements.txt`               | Danh sách các thư viện cần thiết.          |
@@ -94,24 +96,26 @@ Trong trường hợp quá trình tải tự động thất bại, tool sẽ m�
 
 - Mỗi dòng chứa thông tin một profile theo cấu trúc:
   ```plaintext
-  <tên_profile>|<mật_khẩu_ví_bitget>|<12_seeds (tuỳ chọn)>|<proxy (tuỳ chọn)>
+  <tên_profile>|<mật_khẩu_ví_bitget>|<email>|<mật_khẩu_email (tùy chọn 1)>|<12_seeds (tuỳ chọn 2)>|<proxy (tuỳ chọn)>
   ```
 
   Trong đó:
 
     - `tên_profile`: Tên của profile.
     - `mật_khẩu_ví_bitget`: Mật khẩu đăng nhập ví Bitget.
-    - `12_seeds (tuỳ chọn)`: Để thực hiện import vào ví bitget. (Nếu không cung cấp, hãy thực hiện thủ công ở chế độ 1.setup)
+    - `email`: địa chỉ gmail.
+    - `mật_khẩu_email (tùy chọn 1)`: mật khẩu đăng nhập gmail. (Nếu không cung cấp, hãy thực hiện đăng nhập thủ công)
+    - `12_seeds (tuỳ chọn 2)`: Để thực hiện import vào ví bitget. (Nếu không cung cấp, hãy thực hiện thủ công ở chế độ 1.setup)
     - `proxy (tuỳ chọn)`: Có thể là một trong hai dạng sau:
       - `ip:port` → Proxy không có xác thực.
       - `user:pass@ip:port` → Proxy có xác thực bằng tài khoản & mật khẩu.
 
 - Ví dụ:
   ```plaintext
-  profile1|12345678|38.154.227.167:2534             // Proxy (không yêu cầu mật khẩu)
-  profile2|12345678|user:pass@138.154.227.167:2534  // Proxy (yêu cầu mật khẩu)
-  profile3|12345678                                 // Không dùng proxy
-  profile4|12345678|word1 ... word12                // tool sẽ auto import ví
+  profile1|12345678|email1@gmail.com|111111|word1 ... word12|38.154.227.167:2534  // Đầy đủ
+  profile2|12345678|email2@gmail.com|111111                                       // Không seeds, không proxy
+  profile3|12345678|email3@gmail.com|<dấu cách>|word1 ... word12                  // Không mật khẩu email, không proxy
+  profile4|12345678|email4@gmail.com                                              // không mật khẩu, không seeds, không proxy
   ```
 
 - **Lưu ý:** Khi sử dụng proxy, trình duyệt có thể **hiển thị cảnh báo "Not Secure"** do vấn đề chứng chỉ bảo mật. Điều này không ảnh hưởng đến hoạt động.
@@ -245,10 +249,10 @@ browser_manager.run_terminal(
 
 Để chạy chương trình đơn giản hơn, bạn có thể sử dụng file `run_menu.bat` bằng cách click đúp chuột trực tiếp vào file, thay vì phải mở code và gõ lệnh trong CMD.
 
-Nếu bạn đang sử dụng Python trong môi trường ảo (virtual environment), hãy chỉnh sửa đường dẫn Python `H:\venv\Scripts\python.exe` trong file `run_menu.bat`:
+Nếu bạn đang sử dụng Python trong môi trường ảo (virtual environment), hãy chỉnh sửa đường dẫn Python `E:\venv\Scripts\python.exe` trong file `run_menu.bat`:
 
 ```
-set VENV_PATH=H:\venv\Scripts\python.exe
+set VENV_PATH=E:\venv\Scripts\python.exe
 ```
 
 ### 4️⃣ Chạy tự động ẩn với Windows Task Scheduler
